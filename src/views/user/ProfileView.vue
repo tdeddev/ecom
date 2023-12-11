@@ -1,27 +1,45 @@
 <script setup>
-import Userlayout from '@/layouts/Userlayout.vue'
 import { onMounted, ref } from 'vue';
+import Userlayout from '@/layouts/Userlayout.vue'
+
+import { useAccountStore } from '@/stores/account'
+import { storage } from '@/firebase'
+import {  ref as storageRef , uploadBytes, getDownloadURL } from 'firebase/storage'
 
 let email = ref('')
-let name = ref('')
+let fullname = ref('')
+let profileImageUrl = ref('')
+const accountStore = useAccountStore()
 
-
-const saveProfile = () => {
-    let userData = {
+const saveProfile = async () => {
+    try {
+        let userData = {
+        imageUrl : profileImageUrl.value,
         email : email.value,
-        name : name.value
+        fullname : fullname.value
     }
-    localStorage.setItem('profile-data', JSON.stringify(userData))
-    alert('บันทึกข้อมูลสำเร็จ')
+    await accountStore.updateProfile(userData)
+    } catch (error) {
+        console.log('error', error);
+    }
+}
+
+const handleFileUpload = async (event) => {
+    const file = event.target.files[0]
+
+    if(file){
+        const uploadRef = storageRef(storage, `users/${accountStore.user.uid}/${file.name}`)
+        const snapshot = await uploadBytes(uploadRef, file)
+        const downloadUrl = await getDownloadURL(snapshot.ref)
+        profileImageUrl.value = downloadUrl
+    }
 }
 
 onMounted(() => {   
-    let profileData = localStorage.getItem('profile-data')
-    if(profileData){
-        profileData = JSON.parse(profileData)
-        email.value = profileData.email
-        name.value = profileData.name
-    }
+    const profileData = accountStore.profile
+    profileImageUrl.value = (profileData.imageUrl || 'https://cdn.pixabay.com/photo/2020/07/01/12/58/icon-5359553_640.png')
+    email.value = profileData.email
+    fullname.value = profileData.fullname
 })
 </script>
 
@@ -32,20 +50,23 @@ onMounted(() => {
             <div class="flex flex-col items-center">
                 <div class="avatar">
                     <div class="w-24 rounded-full">
-                        <img src="https://cdn.pixabay.com/photo/2020/07/01/12/58/icon-5359553_640.png">
-                    </div>                    
+                        <img :src="profileImageUrl">
+                    </div>
+                </div>
+                <div class="form-control w-full items-center">
+                    <input type="file" @change="handleFileUpload"/>
                 </div>
                 <div class="form-control w-full">
                     <label class="label">
                         <span class="label-text">E-Mail</span>
                     </label>
-                    <input v-model="email" type="text" placeholder="Email" class="input input-bordered w-full" />
+                    <input type="text" placeholder="Email" class="input input-bordered w-full" :value="email" disabled />
                 </div>
                 <div class="form-control w-full">
                     <label class="label">
                         <span class="label-text">Name</span>
                     </label>
-                    <input v-model="name" type="text" placeholder="Name" class="input input-bordered w-full" />
+                    <input v-model="fullname" type="text" placeholder="Name" class="input input-bordered w-full" />
                 </div>
                 <button class="btn btn-primary mt-3 w-full" @click="saveProfile">บันทึกข้อมูล</button>
             </div>

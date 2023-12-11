@@ -27,3 +27,4 @@ npm run dev
 ```sh
 npm run build
 ```
+### Firebase Run Emu firebase emulators:start --import ./firebase-export --export-on-exit ./firebase-export

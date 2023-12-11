@@ -5,6 +5,7 @@ import Userlayout from '@/layouts/Userlayout.vue'
 import Product from '@/components/Product.vue'
 import { useProductStore } from '@/stores/user/product'
 import { useCartStore } from '@/stores/user/cart'
+import { onMounted } from 'vue'
 
 const productStore = useProductStore()
 const cartStore = useCartStore()
@@ -16,6 +17,10 @@ const addToCart = (product) => {
     name: 'cart'
   })
 }
+
+onMounted(() => {
+  productStore.loadProduct();
+})
 </script>
 
 <template>
